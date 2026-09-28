@@ -21,6 +21,8 @@ READ_TRANSLATION = False
 TARGET_LANG = os.environ.get("TARGET_LANG", "ES")
 SAMPLE_RATE = 16_000
 FRAMES_PER_BUFFER = 800  # 50ms at 16kHz
+GREEN = "\033[32m"
+RESET = "\033[0m"
 
 translator = deepl.Translator(os.environ["DEEPL_API_KEY"])
 openai.api_key = os.environ["OPENAI_API_KEY"]
@@ -58,10 +60,10 @@ def on_turn(_, event: TurnEvent):
     if not event.transcript:
         return
 
-    if event.end_of_turn:
+    if event.end_of_turn and event.turn_is_formatted:
         result = translator.translate_text(event.transcript, target_lang=TARGET_LANG)
         print(event.transcript, end="\r\n")
-        print(f"{TARGET_LANG}: " + result.text)
+        print(f"{GREEN}{TARGET_LANG}: {result.text}{RESET}")
 
         if READ_TRANSLATION:
             speech_file_path = "speech.mp3"
