@@ -54,23 +54,35 @@ def play_audio(speech_file_path):
     play(audio_clip)
 
 
+_turn_open = False
+
+
 def on_turn(_, event: TurnEvent):
     "This function is called when a new transcript has been received."
+    global _turn_open
 
     if not event.transcript:
         return
 
-    if event.end_of_turn and event.turn_is_formatted:
-        result = translator.translate_text(event.transcript, target_lang=TARGET_LANG)
-        print(event.transcript, end="\r\n")
-        print(f"{GREEN}{TARGET_LANG}: {result.text}{RESET}")
+    result = translator.translate_text(event.transcript, target_lang=TARGET_LANG)
+    is_final = event.end_of_turn and event.turn_is_formatted
+
+    if _turn_open:
+        print("\033[u\033[0J", end="")  # back to the turn's start, clear the rest
+    else:
+        print("\033[s", end="")  # remember where this turn starts
+        _turn_open = True
+
+    print(event.transcript)
+    print(f"{GREEN}{TARGET_LANG}: {result.text}{RESET}")
+
+    if is_final:
+        _turn_open = False
 
         if READ_TRANSLATION:
             speech_file_path = "speech.mp3"
             gen_speech_file(speech_file_path, result.text)
             play_audio(speech_file_path)
-    else:
-        print(event.transcript, end="\r")
 
 
 def on_terminated(*_):
